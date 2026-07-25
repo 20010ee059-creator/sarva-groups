@@ -34,27 +34,39 @@ export interface FirestoreErrorInfo {
   };
 }
 
-export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-      isAnonymous: auth.currentUser?.isAnonymous,
-      tenantId: auth.currentUser?.tenantId,
-      providerInfo: auth.currentUser?.providerData?.map((provider) => ({
-        providerId: provider.providerId,
-        email: provider.email,
-      })) || []
-    },
+export function handleFirestoreError(
+  error: unknown,
+  operationType: OperationType,
+  path: string | null
+) {
+  console.error("Firestore Error", {
     operationType,
-    path
-  };
-  console.error('Firestore Error:', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
-}
+    path,
+    error,
+  });
 
+  if (
+    error &&
+    typeof error === "object" &&
+    "code" in error
+  ) {
+    switch ((error as any).code) {
+      case "permission-denied":
+        throw new Error("Permission denied.");
+
+      case "not-found":
+        throw new Error("Requested document not found.");
+
+      case "unavailable":
+        throw new Error("Firestore service is unavailable.");
+
+      default:
+        throw new Error("Database operation failed.");
+    }
+  }
+
+  throw new Error("Unexpected Firestore error.");
+}
 async function testConnection() {
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
