@@ -9,9 +9,12 @@ import { UserRole, User } from './src/types.js';
 
 // Load environment variables from .env and .env.example fallback
 dotenv.config();
-dotenv.config({ path: '.env.example' });
 
-const JWT_SECRET = process.env.JWT_SECRET || 'sarva-solar-enterprise-secret-key-2026';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET environment variable is required.");
+}
 const PORT = Number(process.env.PORT) || 3000;
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'sarvasolars@gmail.com';
 
