@@ -12,7 +12,7 @@ dotenv.config();
 dotenv.config({ path: '.env.example' });
 
 const JWT_SECRET = process.env.JWT_SECRET || 'sarva-solar-enterprise-secret-key-2026';
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'sarvasolars@gmail.com';
 
 // Configure Nodemailer Transporter
