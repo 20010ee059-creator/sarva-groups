@@ -36,7 +36,7 @@ async function getEmailTransporter() {
   console.log(`  - User: "${user}"`);
   console.log(`  - Pass Configured: ${pass ? `YES (${pass.length} chars, masked: ${pass.substring(0, 3)}****)` : 'NO'}`);
 
-  if (pass) {
+  if (user && pass) {
     const isGmail = host.includes('gmail') || user.toLowerCase().endsWith('gmail.com');
     const primaryConfig: any = isGmail
       ? {
@@ -72,36 +72,32 @@ async function getEmailTransporter() {
     };
   }
 
-  // Fallback to test transport if no password provided
-  try {
+// Development-only fallback
+if (process.env.NODE_ENV !== 'production') {
+    console.warn("[EMAIL] Development mode detected. Using Ethereal test account.");
+
     const testAccount = await nodemailer.createTestAccount();
+
     return {
-      transporter: nodemailer.createTransport({
-        host: 'smtp.ethereal.email',
-        port: 587,
-        secure: false,
-        auth: {
-          user: testAccount.user,
-          pass: testAccount.pass
-        }
-      }),
-      from: `Sarva Solar Alerts <${testAccount.user}>`,
-      isLive: false,
-      testUrlInfo: testAccount.web
+        transporter: nodemailer.createTransport({
+            host: "smtp.ethereal.email",
+            port: 587,
+            secure: false,
+            auth: {
+                user: testAccount.user,
+                pass: testAccount.pass,
+            },
+        }),
+        from: `Sarva Solar Alerts <${testAccount.user}>`,
+        isLive: false,
+        testUrlInfo: testAccount.web,
     };
-  } catch (err) {
-    console.warn('[EMAIL] Ethereal test account generation failed, falling back to direct send attempt.');
-    return {
-      transporter: nodemailer.createTransport({
-        host,
-        port,
-        secure: port === 465,
-        auth: { user, pass: 'placeholder' }
-      }),
-      from: `Sarva Solar Alerts <${user}>`,
-      isLive: false
-    };
-  }
+}
+
+// Production must have SMTP credentials
+throw new Error(
+    "SMTP configuration is missing. Please configure SMTP_HOST, SMTP_PORT, SMTP_USER and SMTP_PASS."
+);
 }
 
 async function sendAdminEmailNotification(params: {
